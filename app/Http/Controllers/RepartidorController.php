@@ -7,7 +7,6 @@ use App\Enums\RolUsuario;
 use App\Http\Requests\GuardarRepartidorRequest;
 use App\Models\Repartidor;
 use App\Models\User;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
@@ -17,30 +16,26 @@ class RepartidorController extends Controller
 
     public function create(): void {}
 
-    public function store(GuardarRepartidorRequest $request): RedirectResponse
+    public function store(GuardarRepartidorRequest $request): void
     {
         $datos = $request->validated();
 
-        $repartidor = DB::transaction(function () use ($datos, $request): Repartidor {
+        DB::transaction(function () use ($datos, $request): void {
             $repartidor = new Repartidor(Arr::except($datos, ['email', 'password']));
 
             if (! empty($datos['email']) && ! empty($datos['password'])) {
-                $repartidor->user_id = $this->crearUsuario($datos, $request->user()->empresa_id)->id;
+                $this->asociarUsuarioNuevo($repartidor, $datos, $request->user()->empresa_id);
             }
 
             $repartidor->save();
-
-            return $repartidor;
         });
-
-        return redirect()->route('repartidores.show', $repartidor)->with('status', 'Repartidor creado.');
     }
 
     public function show(Repartidor $repartidor): void {}
 
     public function edit(Repartidor $repartidor): void {}
 
-    public function update(GuardarRepartidorRequest $request, Repartidor $repartidor): RedirectResponse
+    public function update(GuardarRepartidorRequest $request, Repartidor $repartidor): void
     {
         $datos = $request->validated();
 
@@ -55,47 +50,39 @@ class RepartidorController extends Controller
                     'password' => $datos['password'] ?? null,
                 ]))->save();
             } elseif (! empty($datos['email']) && ! empty($datos['password'])) {
-                $repartidor->user_id = $this->crearUsuario($datos, $request->user()->empresa_id)->id;
+                $this->asociarUsuarioNuevo($repartidor, $datos, $request->user()->empresa_id);
             }
 
             $repartidor->save();
         });
-
-        return redirect()->route('repartidores.show', $repartidor)->with('status', 'Repartidor actualizado.');
     }
 
-    public function destroy(Repartidor $repartidor): RedirectResponse
+    public function destroy(Repartidor $repartidor): void
     {
-        if ($repartidor->rutas()->exists() || $repartidor->entregas()->exists()) {
-            DB::transaction(function () use ($repartidor): void {
+        DB::transaction(function () use ($repartidor): void {
+            if ($repartidor->rutas()->exists() || $repartidor->entregas()->exists()) {
                 $repartidor->update(['estado' => EstadoRepartidor::Inactivo]);
                 $repartidor->usuario?->update(['activo' => false]);
-            });
-
-            return redirect()->route('repartidores.index')->with('status', 'El repartidor tiene historial: se desactivó.');
-        }
-
-        DB::transaction(function () use ($repartidor): void {
-            $usuario = $repartidor->usuario;
-            $repartidor->delete();
-            $usuario?->delete();
+            } else {
+                $usuario = $repartidor->usuario;
+                $repartidor->delete();
+                $usuario?->delete();
+            }
         });
-
-        return redirect()->route('repartidores.index')->with('status', 'Repartidor eliminado.');
     }
 
     /**
      * @param  array<string, mixed>  $datos
      */
-    private function crearUsuario(array $datos, string $empresaId): User
+    private function asociarUsuarioNuevo(Repartidor $repartidor, array $datos, string $empresaId): void
     {
-        return User::create([
+        $repartidor->user_id = User::create([
             'name' => $datos['nombre'],
             'email' => $datos['email'],
             'password' => $datos['password'],
             'telefono' => $datos['telefono'] ?? null,
             'empresa_id' => $empresaId,
             'rol' => RolUsuario::Repartidor,
-        ]);
+        ])->id;
     }
 }

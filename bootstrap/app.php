@@ -24,8 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
             EstablecerContextoDb::class,
         ]);
 
-        $middleware->redirectGuestsTo(fn () => route('login'));
-        $middleware->redirectUsersTo(fn () => route('inicio'));
+        $middleware->redirectGuestsTo(fn () => route('filament.admin.auth.login'));
+        $middleware->redirectUsersTo('/admin');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -4,12 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CerrarEntregaRequest;
 use App\Models\Entrega;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Arr;
 
 class CierreEntregaController extends Controller
 {
-    public function store(CerrarEntregaRequest $request, Entrega $entrega): RedirectResponse
+    public function store(CerrarEntregaRequest $request, Entrega $entrega): void
     {
         $datos = Arr::except($request->validated(), ['evidencia']);
 
@@ -18,7 +17,5 @@ class CierreEntregaController extends Controller
         }
 
         $entrega->update($datos);
-
-        return redirect()->route('entregas.show', $entrega)->with('status', 'Entrega cerrada.');
     }
 }

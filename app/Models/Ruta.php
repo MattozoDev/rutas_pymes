@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EstadoEntrega;
 use App\Enums\EstadoRuta;
 use App\Enums\OrigenRuta;
 use App\Models\Concerns\PerteneceAEmpresa;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 #[Table('rutas')]
 #[Fillable([
@@ -52,6 +54,28 @@ class Ruta extends Model
     public function esModificable(): bool
     {
         return in_array($this->estado, [EstadoRuta::Borrador, EstadoRuta::Planificada], true);
+    }
+
+    public function cambiarEstado(EstadoRuta $nuevoEstado): bool
+    {
+        $entregasAbiertas = $this->entregas()->getQuery()
+            ->whereIn('estado', [EstadoEntrega::Asignada, EstadoEntrega::EnCamino]);
+
+        if (! $this->estado->puedeCambiarA($nuevoEstado)
+            || ($nuevoEstado === EstadoRuta::Completada && $entregasAbiertas->exists())) {
+            return false;
+        }
+
+        DB::transaction(function () use ($nuevoEstado, $entregasAbiertas): void {
+            if ($nuevoEstado === EstadoRuta::Cancelada) {
+                $entregasAbiertas->delete();
+            }
+
+            $this->estado = $nuevoEstado;
+            $this->save();
+        });
+
+        return true;
     }
 
     /**

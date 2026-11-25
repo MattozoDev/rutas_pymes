@@ -6,58 +6,37 @@ use App\Http\Requests\GuardarVehiculoRequest;
 use App\Models\Entrega;
 use App\Models\TipoVehiculo;
 use App\Models\Vehiculo;
-use Illuminate\Http\RedirectResponse;
 
 class VehiculoController extends Controller
 {
-    public function index(): void
-    {
-        $vehiculos = Vehiculo::query()
-            ->with(['tipoVehiculo', 'repartidores'])
-            ->orderByDesc('activo')
-            ->orderBy('identificador')
-            ->get();
-    }
+    public function index(): void {}
 
     public function create(): void {}
 
-    public function store(GuardarVehiculoRequest $request): RedirectResponse
+    public function store(GuardarVehiculoRequest $request): void
     {
-        Vehiculo::create($this->conCapacidadPorDefecto($request->validated()));
+        $datos = $request->validated();
+        $datos['capacidad_kg'] ??= TipoVehiculo::query()->whereKey($datos['tipo'])->value('capacidad_kg_defecto');
 
-        return redirect()->route('vehiculos.index')->with('status', 'Vehículo creado.');
+        Vehiculo::create($datos);
     }
 
     public function edit(Vehiculo $vehiculo): void {}
 
-    public function update(GuardarVehiculoRequest $request, Vehiculo $vehiculo): RedirectResponse
+    public function update(GuardarVehiculoRequest $request, Vehiculo $vehiculo): void
     {
-        $vehiculo->update($this->conCapacidadPorDefecto($request->validated()));
+        $datos = $request->validated();
+        $datos['capacidad_kg'] ??= TipoVehiculo::query()->whereKey($datos['tipo'])->value('capacidad_kg_defecto');
 
-        return redirect()->route('vehiculos.index')->with('status', 'Vehículo actualizado.');
+        $vehiculo->update($datos);
     }
 
-    public function destroy(Vehiculo $vehiculo): RedirectResponse
+    public function destroy(Vehiculo $vehiculo): void
     {
         if ($vehiculo->rutas()->exists() || Entrega::query()->whereBelongsTo($vehiculo)->exists()) {
             $vehiculo->update(['activo' => false]);
-
-            return redirect()->route('vehiculos.index')->with('status', 'El vehículo tiene historial: se desactivó.');
+        } else {
+            $vehiculo->delete();
         }
-
-        $vehiculo->delete();
-
-        return redirect()->route('vehiculos.index')->with('status', 'Vehículo eliminado.');
-    }
-
-    /**
-     * @param  array<string, mixed>  $datos
-     * @return array<string, mixed>
-     */
-    private function conCapacidadPorDefecto(array $datos): array
-    {
-        $datos['capacidad_kg'] ??= TipoVehiculo::query()->whereKey($datos['tipo'])->value('capacidad_kg_defecto');
-
-        return $datos;
     }
 }

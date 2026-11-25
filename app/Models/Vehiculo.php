@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\PerteneceAEmpresa;
+use App\Services\CapacidadVehiculo;
 use Database\Factories\VehiculoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -39,6 +40,16 @@ class Vehiculo extends Model
             'capacidad_kg' => 'decimal:2',
             'activo' => 'boolean',
         ];
+    }
+
+    public function nombreTipo(): string
+    {
+        return CapacidadVehiculo::nombreDeTipo($this->tipo);
+    }
+
+    public function etiqueta(): string
+    {
+        return sprintf('%s %s · %s kg', $this->nombreTipo(), $this->identificador, CapacidadVehiculo::formatearKg($this->capacidad_kg));
     }
 
     /**

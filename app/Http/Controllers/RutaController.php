@@ -7,8 +7,6 @@ use App\Http\Requests\GuardarRutaRequest;
 use App\Models\Entrega;
 use App\Models\IaSugerenciaRuta;
 use App\Models\Ruta;
-use Illuminate\Database\QueryException;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -28,29 +26,21 @@ class RutaController extends Controller
 
     public function create(Request $request): void {}
 
-    public function store(GuardarRutaRequest $request): RedirectResponse
+    public function store(GuardarRutaRequest $request): void
     {
         $datos = $request->validated();
 
-        try {
-            $ruta = DB::transaction(function () use ($datos, $request): Ruta {
-                $ruta = new Ruta(Arr::except($datos, ['pedidos']));
-                $ruta->creado_por = $request->user()->id;
-                $ruta->save();
+        DB::transaction(function () use ($datos, $request): void {
+            $ruta = new Ruta(Arr::except($datos, ['pedidos']));
+            $ruta->creado_por = $request->user()->id;
+            $ruta->save();
 
-                $this->sincronizarEntregas($ruta, $datos['pedidos']);
+            $this->sincronizarEntregas($ruta, $datos['pedidos']);
 
-                if (! empty($datos['ia_sugerencia_id'])) {
-                    IaSugerenciaRuta::query()->whereKey($datos['ia_sugerencia_id'])->update(['aceptada' => true]);
-                }
-
-                return $ruta;
-            });
-        } catch (QueryException $excepcion) {
-            return $this->errorDeCapacidad($excepcion);
-        }
-
-        return redirect()->route('rutas.show', $ruta)->with('status', 'Ruta planificada.');
+            if (! empty($datos['ia_sugerencia_id'])) {
+                IaSugerenciaRuta::query()->whereKey($datos['ia_sugerencia_id'])->update(['aceptada' => true]);
+            }
+        });
     }
 
     public function show(Ruta $ruta): void
@@ -63,25 +53,19 @@ class RutaController extends Controller
         Gate::authorize('update', $ruta);
     }
 
-    public function update(GuardarRutaRequest $request, Ruta $ruta): RedirectResponse
+    public function update(GuardarRutaRequest $request, Ruta $ruta): void
     {
         Gate::authorize('update', $ruta);
 
         $datos = $request->validated();
 
-        try {
-            DB::transaction(function () use ($ruta, $datos): void {
-                $ruta->update(Arr::except($datos, ['pedidos']));
-                $this->sincronizarEntregas($ruta, $datos['pedidos']);
-            });
-        } catch (QueryException $excepcion) {
-            return $this->errorDeCapacidad($excepcion);
-        }
-
-        return redirect()->route('rutas.show', $ruta)->with('status', 'Ruta actualizada.');
+        DB::transaction(function () use ($ruta, $datos): void {
+            $ruta->update(Arr::except($datos, ['pedidos']));
+            $this->sincronizarEntregas($ruta, $datos['pedidos']);
+        });
     }
 
-    public function destroy(Ruta $ruta): RedirectResponse
+    public function destroy(Ruta $ruta): void
     {
         Gate::authorize('delete', $ruta);
 
@@ -89,8 +73,6 @@ class RutaController extends Controller
             $ruta->entregas()->delete();
             $ruta->delete();
         });
-
-        return redirect()->route('rutas.index')->with('status', 'Ruta eliminada.');
     }
 
     /**
@@ -113,16 +95,5 @@ class RutaController extends Controller
                 ],
             );
         }
-    }
-
-    private function errorDeCapacidad(QueryException $excepcion): RedirectResponse
-    {
-        if (! str_contains($excepcion->getMessage(), 'Capacidad insuficiente')) {
-            throw $excepcion;
-        }
-
-        return back()->withInput()->withErrors([
-            'pedidos' => 'El peso total de los pedidos supera la capacidad del vehículo seleccionado.',
-        ]);
     }
 }

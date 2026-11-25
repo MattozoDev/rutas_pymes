@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -12,7 +11,7 @@ class SesionController extends Controller
 {
     public function create(): void {}
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): void
     {
         $credenciales = $request->validate([
             'email' => ['required', 'email'],
@@ -28,17 +27,13 @@ class SesionController extends Controller
         }
 
         $request->session()->regenerate();
-
-        return redirect()->intended(route('inicio'));
     }
 
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request): void
     {
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        return redirect()->route('login');
     }
 }

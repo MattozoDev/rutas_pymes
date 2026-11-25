@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Database\ConexionPostgres;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -16,7 +18,10 @@ class AppServiceProvider extends ServiceProvider
         'comprobante', 'medicion', 'notificacion',
     ];
 
-    public function register(): void {}
+    public function register(): void
+    {
+        Connection::resolverFor('pgsql', fn ($pdo, string $database, string $prefix, array $config): ConexionPostgres => new ConexionPostgres($pdo, $database, $prefix, $config));
+    }
 
     public function boot(): void
     {

@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\EstadoEntrega;
 use App\Models\Entrega;
-use App\Models\Repartidor;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -13,7 +11,7 @@ class EntregaController extends Controller
 {
     public function index(Request $request): void
     {
-        $this->repartidorActual($request);
+        abort_if($request->user()->repartidor === null, 403, 'Tu usuario no tiene una ficha de repartidor asociada.');
     }
 
     public function show(Entrega $entrega): void
@@ -21,25 +19,12 @@ class EntregaController extends Controller
         Gate::authorize('view', $entrega);
     }
 
-    public function update(Entrega $entrega): RedirectResponse
+    public function update(Entrega $entrega): void
     {
         Gate::authorize('update', $entrega);
 
-        if ($entrega->estado !== EstadoEntrega::Asignada) {
-            return back()->withErrors(['estado' => 'La entrega ya está en camino.']);
+        if ($entrega->estado === EstadoEntrega::Asignada) {
+            $entrega->update(['estado' => EstadoEntrega::EnCamino]);
         }
-
-        $entrega->update(['estado' => EstadoEntrega::EnCamino]);
-
-        return back()->with('status', 'Entrega en camino.');
-    }
-
-    private function repartidorActual(Request $request): Repartidor
-    {
-        $repartidor = $request->user()->repartidor;
-
-        abort_if($repartidor === null, 403, 'Tu usuario no tiene una ficha de repartidor asociada.');
-
-        return $repartidor;
     }
 }

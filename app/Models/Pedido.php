@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EstadoPedido;
 use App\Enums\TamanoCarga;
 use App\Models\Concerns\PerteneceAEmpresa;
+use App\Services\CapacidadVehiculo;
 use Database\Factories\PedidoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 
 #[Table('pedidos')]
 #[Fillable([
@@ -53,6 +55,29 @@ class Pedido extends Model
     public function esEditable(): bool
     {
         return $this->estado === EstadoPedido::Pendiente;
+    }
+
+    /**
+     * @return Collection<string, object{total: int, peso_kg: float}>
+     */
+    public static function resumenPorEstado(): Collection
+    {
+        return once(fn (): Collection => static::query()
+            ->toBase()
+            ->selectRaw('estado, count(*) as total, coalesce(sum(peso_kg), 0) as peso_kg')
+            ->groupBy('estado')
+            ->get()
+            ->keyBy('estado'));
+    }
+
+    public function resumenCarga(): string
+    {
+        return sprintf(
+            '%d %s · %s kg',
+            $this->bultos,
+            $this->bultos === 1 ? 'bulto' : 'bultos',
+            CapacidadVehiculo::formatearKg($this->peso_kg),
+        );
     }
 
     /**

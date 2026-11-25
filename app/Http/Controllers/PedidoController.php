@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Enums\EstadoPedido;
 use App\Http\Requests\GuardarPedidoRequest;
 use App\Models\Pedido;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -23,51 +22,28 @@ class PedidoController extends Controller
 
     public function create(): void {}
 
-    public function store(GuardarPedidoRequest $request): RedirectResponse
+    public function store(GuardarPedidoRequest $request): void
     {
         $pedido = new Pedido($request->validated());
         $pedido->creado_por = $request->user()->id;
         $pedido->save();
-
-        return redirect()->route('pedidos.show', $pedido)->with('status', 'Pedido creado.');
     }
 
     public function show(Pedido $pedido): void {}
 
-    public function edit(Pedido $pedido): ?RedirectResponse
-    {
-        if (! $pedido->esEditable()) {
-            return $this->noEditable($pedido);
-        }
+    public function edit(Pedido $pedido): void {}
 
-        return null;
+    public function update(GuardarPedidoRequest $request, Pedido $pedido): void
+    {
+        if ($pedido->esEditable()) {
+            $pedido->update($request->validated());
+        }
     }
 
-    public function update(GuardarPedidoRequest $request, Pedido $pedido): RedirectResponse
+    public function destroy(Pedido $pedido): void
     {
-        if (! $pedido->esEditable()) {
-            return $this->noEditable($pedido);
+        if ($pedido->esEditable()) {
+            $pedido->delete();
         }
-
-        $pedido->update($request->validated());
-
-        return redirect()->route('pedidos.show', $pedido)->with('status', 'Pedido actualizado.');
-    }
-
-    public function destroy(Pedido $pedido): RedirectResponse
-    {
-        if (! $pedido->esEditable()) {
-            return $this->noEditable($pedido);
-        }
-
-        $pedido->delete();
-
-        return redirect()->route('pedidos.index')->with('status', 'Pedido eliminado.');
-    }
-
-    private function noEditable(Pedido $pedido): RedirectResponse
-    {
-        return redirect()->route('pedidos.show', $pedido)
-            ->withErrors(['pedido' => 'Solo se pueden modificar pedidos pendientes (sin ruta asignada).']);
     }
 }
