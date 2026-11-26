@@ -16,15 +16,17 @@ class ClienteFactory extends Factory
      */
     public function definition(): array
     {
+        $direccion = DatosChilenos::direccion();
+
         return [
             'empresa_id' => Empresa::factory(),
-            'nombre' => fake()->name(),
-            'telefono' => fake()->phoneNumber(),
-            'email' => fake()->safeEmail(),
-            'direccion' => fake()->streetAddress(),
-            'comuna' => fake()->city(),
-            'latitud' => fake()->latitude(-33.6, -33.3),
-            'longitud' => fake()->longitude(-70.8, -70.5),
+            'nombre' => DatosChilenos::nombreCliente(),
+            'telefono' => DatosChilenos::celular(),
+            'email' => fake()->unique()->safeEmail(),
+            'direccion' => $direccion['direccion'],
+            'comuna' => $direccion['comuna'],
+            'latitud' => $direccion['latitud'],
+            'longitud' => $direccion['longitud'],
             'activo' => true,
         ];
     }

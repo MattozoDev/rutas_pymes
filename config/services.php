@@ -28,6 +28,17 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'osrm' => [
+        'url' => env('OSRM_URL', 'https://routing.openstreetmap.de'),
+        'timeout' => (int) env('OSRM_TIMEOUT', 8),
+    ],
+
+    'nominatim' => [
+        'url' => env('NOMINATIM_URL', 'https://nominatim.openstreetmap.org'),
+        'user_agent' => env('NOMINATIM_USER_AGENT', 'rutapyme/1.0 (gestion de entregas para pymes)'),
+        'timeout' => (int) env('NOMINATIM_TIMEOUT', 8),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

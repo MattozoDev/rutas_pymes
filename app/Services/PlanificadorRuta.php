@@ -16,7 +16,7 @@ final class PlanificadorRuta
         'furgon' => 22,
     ];
 
-    private const MINUTOS_POR_PARADA = 5;
+    public const MINUTOS_POR_PARADA = 5;
 
     /**
      * @param  array{lat: float, lng: float}|null  $origen

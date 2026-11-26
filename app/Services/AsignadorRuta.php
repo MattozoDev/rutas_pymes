@@ -30,14 +30,28 @@ final class AsignadorRuta
         }
 
         $planificacion = $this->planificar($pedidos, $pedidoIds, $optimizarOrden);
+        $porCalles = $this->recorridoPorCalles($pedidos, $planificacion['orden'], $vehiculo->tipo);
+        $ingresadoPorCalles = $porCalles !== null && $planificacion['orden'] !== array_values($pedidoIds)
+            ? $this->recorridoPorCalles($pedidos, array_values($pedidoIds), $vehiculo->tipo)
+            : $porCalles;
 
-        $datosRuta['distancia_km'] = $planificacion['distancia_km'];
-        $datosRuta['duracion_min'] = $planificacion['distancia_km'] === null
-            ? null
-            : PlanificadorRuta::estimarDuracionMin($planificacion['distancia_km'], count($pedidoIds), $vehiculo->tipo);
+        if ($porCalles !== null) {
+            $datosRuta['distancia_km'] = $porCalles['distancia_km'];
+            $datosRuta['duracion_min'] = $porCalles['duracion_min'] + count($pedidoIds) * PlanificadorRuta::MINUTOS_POR_PARADA;
+        } else {
+            $datosRuta['distancia_km'] = $planificacion['distancia_km'];
+            $datosRuta['duracion_min'] = $planificacion['distancia_km'] === null
+                ? null
+                : PlanificadorRuta::estimarDuracionMin($planificacion['distancia_km'], count($pedidoIds), $vehiculo->tipo);
+        }
+
         $datosRuta['trayecto'] = [
             'orden' => $planificacion['orden'],
-            'distancia_orden_ingresado_km' => $planificacion['distancia_orden_ingresado_km'],
+            'calculo' => $porCalles !== null ? 'calles' : 'linea_recta',
+            'distancia_orden_ingresado_km' => $porCalles !== null
+                ? $ingresadoPorCalles['distancia_km'] ?? null
+                : $planificacion['distancia_orden_ingresado_km'],
+            'distancia_linea_recta_km' => $planificacion['distancia_km'],
             'metodo' => $optimizarOrden ? 'vecino_mas_cercano' : 'orden_manual',
         ];
 
@@ -107,6 +121,33 @@ final class AsignadorRuta
             'distancia_km' => $resultado['distancia_km'],
             'distancia_orden_ingresado_km' => $distanciaOrdenIngresado,
         ];
+    }
+
+    /**
+     * @param  Collection<string, Pedido>  $pedidos
+     * @param  list<string>  $orden
+     * @return array{distancia_km: float, duracion_min: int}|null
+     */
+    private function recorridoPorCalles(Collection $pedidos, array $orden, ?string $tipoVehiculo): ?array
+    {
+        $empresa = auth()->user()?->empresa;
+        $puntos = [];
+
+        if ($empresa?->latitud !== null && $empresa?->longitud !== null) {
+            $puntos[] = ['lat' => (float) $empresa->latitud, 'lng' => (float) $empresa->longitud];
+        }
+
+        foreach ($orden as $pedidoId) {
+            $pedido = $pedidos[$pedidoId];
+
+            if ($pedido->latitud === null || $pedido->longitud === null) {
+                return null;
+            }
+
+            $puntos[] = ['lat' => (float) $pedido->latitud, 'lng' => (float) $pedido->longitud];
+        }
+
+        return RuteoCalles::calcular($puntos, $tipoVehiculo);
     }
 
     /**

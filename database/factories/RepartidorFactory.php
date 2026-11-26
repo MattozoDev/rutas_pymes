@@ -20,8 +20,8 @@ class RepartidorFactory extends Factory
     {
         return [
             'empresa_id' => Empresa::factory(),
-            'nombre' => fake()->name(),
-            'telefono' => fake()->phoneNumber(),
+            'nombre' => DatosChilenos::nombrePersona(),
+            'telefono' => DatosChilenos::celular(),
             'estado' => EstadoRepartidor::Disponible,
         ];
     }

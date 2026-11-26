@@ -15,13 +15,17 @@ class EmpresaFactory extends Factory
      */
     public function definition(): array
     {
+        $direccion = DatosChilenos::direccion();
+
         return [
-            'nombre' => fake()->company(),
-            'rut' => fake()->unique()->numerify('########-#'),
-            'email' => fake()->companyEmail(),
-            'telefono' => fake()->phoneNumber(),
-            'direccion' => fake()->streetAddress(),
-            'comuna' => fake()->city(),
+            'nombre' => 'Almacén '.fake()->randomElement(['Don Pedro', 'La Esquina', 'El Roble', 'San Juan']),
+            'rut' => DatosChilenos::rut(),
+            'email' => fake()->unique()->safeEmail(),
+            'telefono' => DatosChilenos::telefonoFijo(),
+            'direccion' => $direccion['direccion'],
+            'comuna' => $direccion['comuna'],
+            'latitud' => $direccion['latitud'],
+            'longitud' => $direccion['longitud'],
             'activa' => true,
         ];
     }

@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Pedidos\Schemas;
 
 use App\Models\Pedido;
+use App\Services\MapaEntregas;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 
 class PedidoInfolist
@@ -45,6 +47,16 @@ class PedidoInfolist
                         TextEntry::make('entrega.orden_parada')->label('Parada N°')->placeholder('—'),
                         TextEntry::make('entrega.estado')->label('Estado de la entrega')->badge()->placeholder('—'),
                         TextEntry::make('comprobante.codigo')->label('Comprobante')->placeholder('Se emite al cerrar la entrega'),
+                    ]),
+                Section::make('Mapa de entrega')
+                    ->description('Recorrido por calles desde el punto de salida (L) hasta el destino')
+                    ->columnSpanFull()
+                    ->schema([
+                        View::make('filament.mapa-entregas')
+                            ->viewData(fn (Pedido $record): array => [
+                                'mapa' => MapaEntregas::paraPedido($record, $record->entrega?->vehiculo?->tipo),
+                                'altura' => '22rem',
+                            ]),
                     ]),
             ]);
     }

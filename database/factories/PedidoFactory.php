@@ -19,14 +19,19 @@ class PedidoFactory extends Factory
      */
     public function definition(): array
     {
+        $direccion = DatosChilenos::direccion();
+
         return [
             'empresa_id' => Empresa::factory(),
             'cliente_id' => fn (array $attributes) => Cliente::factory()->state(['empresa_id' => $attributes['empresa_id']]),
             'fecha_entrega' => now()->toDateString(),
-            'direccion_entrega' => fake()->streetAddress(),
-            'comuna' => fake()->city(),
-            'bultos' => fake()->numberBetween(1, 3),
-            'peso_kg' => fake()->randomFloat(2, 1, 10),
+            'direccion_entrega' => $direccion['direccion'],
+            'comuna' => $direccion['comuna'],
+            'referencia' => DatosChilenos::referencia(),
+            'latitud' => $direccion['latitud'],
+            'longitud' => $direccion['longitud'],
+            'bultos' => fake()->numberBetween(1, 4),
+            'peso_kg' => fake()->randomFloat(2, 1, 40),
             'tamano' => TamanoCarga::Mediano,
             'estado' => EstadoPedido::Pendiente,
         ];

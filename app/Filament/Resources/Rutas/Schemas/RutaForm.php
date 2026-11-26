@@ -11,6 +11,7 @@ use App\Models\Vehiculo;
 use App\Services\AsignadorRuta;
 use App\Services\CapacidadVehiculo;
 use App\Services\EvaluacionCapacidad;
+use App\Services\MapaEntregas;
 use App\Services\PlanificadorRuta;
 use Closure;
 use Filament\Forms\Components\DatePicker;
@@ -23,6 +24,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\HtmlString;
@@ -116,8 +118,13 @@ class RutaForm
 
                 Group::make([
                     Section::make('Ruta sugerida')
-                        ->description('Vista previa · distancia en línea recta')
+                        ->description('Vista previa del recorrido por calles')
                         ->schema([
+                            View::make('filament.mapa-entregas')
+                                ->viewData(fn (Get $get): array => [
+                                    'mapa' => self::mapaDeVistaPrevia($get('vehiculo_id'), (array) $get('pedidos'), (bool) $get('optimizar')),
+                                    'altura' => '16rem',
+                                ]),
                             Text::make(fn (Get $get): HtmlString => self::vistaPreviaDeParadas((array) $get('pedidos'), (bool) $get('optimizar'))),
                             Text::make(fn (Get $get): HtmlString => self::resumenDeRuta($get('vehiculo_id'), (array) $get('pedidos'), (bool) $get('optimizar'))),
                         ]),
@@ -250,6 +257,21 @@ class RutaForm
 
     /**
      * @param  list<string>  $pedidoIds
+     * @return array<string, mixed>
+     */
+    private static function mapaDeVistaPrevia(?string $vehiculoId, array $pedidoIds, bool $optimizar): array
+    {
+        $plan = self::planificar($pedidoIds, $optimizar);
+
+        if ($plan === null) {
+            return MapaEntregas::paraPedidosEnOrden(collect(), self::vehiculo($vehiculoId)?->tipo);
+        }
+
+        return MapaEntregas::paraPedidosEnOrden(collect($plan['orden'])->map(fn (string $id): Pedido => $plan['pedidos'][$id]), self::vehiculo($vehiculoId)?->tipo);
+    }
+
+    /**
+     * @param  list<string>  $pedidoIds
      */
     private static function vistaPreviaDeParadas(array $pedidoIds, bool $optimizar): HtmlString
     {
@@ -297,7 +319,7 @@ class RutaForm
             'Carga' => $evaluacion
                 ? CapacidadVehiculo::formatearKg($evaluacion->cargaKg).' / '.CapacidadVehiculo::formatearKg($evaluacion->capacidadKg).' kg'
                 : '—',
-            'Distancia' => $distancia !== null ? number_format($distancia, 1, ',', '.').' km' : 'Faltan coordenadas',
+            'Distancia (línea recta)' => $distancia !== null ? number_format($distancia, 1, ',', '.').' km' : 'Faltan coordenadas',
             'Tiempo estimado' => $distancia !== null
                 ? PlanificadorRuta::estimarDuracionMin($distancia, count($pedidoIds), $vehiculo?->tipo).' min'
                 : '—',

@@ -19,7 +19,7 @@ class VehiculoFactory extends Factory
         return [
             'empresa_id' => Empresa::factory(),
             'tipo' => 'auto',
-            'identificador' => strtoupper(fake()->unique()->bothify('??##??')),
+            'identificador' => DatosChilenos::patente(),
             'capacidad_kg' => 300,
             'activo' => true,
         ];

@@ -40,6 +40,10 @@
             </div>
         </x-filament::section>
 
+        @if ($entregas->isNotEmpty())
+            <x-mapa-entregas :mapa="\App\Services\MapaEntregas::paraEntregas($abiertas->isNotEmpty() ? $abiertas : $entregas, $vehiculo?->tipo)" altura="16rem" :indicaciones="$abiertas->isNotEmpty()" />
+        @endif
+
         <div style="display:flex;justify-content:space-between;align-items:center">
             <h2 style="font-weight:600;opacity:.8">Orden sugerido de paradas</h2>
             @if ($urlMapa)

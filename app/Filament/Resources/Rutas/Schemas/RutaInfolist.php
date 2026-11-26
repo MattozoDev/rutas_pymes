@@ -6,10 +6,12 @@ use App\Filament\Resources\Comprobantes\ComprobanteResource;
 use App\Models\Entrega;
 use App\Models\Ruta;
 use App\Services\CapacidadVehiculo;
+use App\Services\MapaEntregas;
 use App\Services\PlanificadorRuta;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 
 class RutaInfolist
@@ -22,6 +24,12 @@ class RutaInfolist
                 Section::make('Paradas en orden de visita')
                     ->columnSpan(2)
                     ->schema([
+                        View::make('filament.mapa-entregas')
+                            ->viewData(fn (Ruta $record): array => [
+                                'mapa' => MapaEntregas::paraEntregas($record->entregas, $record->vehiculo?->tipo),
+                                'altura' => '20rem',
+                                'indicaciones' => true,
+                            ]),
                         RepeatableEntry::make('entregas')
                             ->hiddenLabel()
                             ->columns(6)

@@ -2,14 +2,11 @@
 
 namespace App\Filament\Widgets;
 
-use App\Enums\EstadoPedido;
-use App\Enums\EstadoRepartidor;
 use App\Filament\Resources\Comprobantes\ComprobanteResource;
 use App\Filament\Resources\Pedidos\PedidoResource;
 use App\Filament\Resources\Repartidores\RepartidorResource;
-use App\Models\Pedido;
-use App\Models\Repartidor;
 use App\Services\CapacidadVehiculo;
+use App\Services\MetricasPanel;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -22,39 +19,55 @@ class ResumenDelDia extends StatsOverviewWidget
 
     protected int|string|array $columnSpan = 'full';
 
+    protected function getColumns(): int|array|null
+    {
+        return ['default' => 1, 'sm' => 2, 'xl' => 4];
+    }
+
     protected function getStats(): array
     {
-        $hoy = today(config('app.zona_horaria_negocio'))->toDateString();
-
-        $porEstado = Pedido::query()
-            ->where('fecha_entrega', $hoy)
-            ->toBase()
-            ->selectRaw('estado, count(*) as total')
-            ->groupBy('estado')
-            ->pluck('total', 'estado');
-
-        $pendientes = Pedido::resumenPorEstado()->get(EstadoPedido::Pendiente->value);
-        $cargaPendiente = $pendientes->peso_kg ?? 0;
-        $enRuta = Repartidor::query()->where('estado', EstadoRepartidor::EnRuta)->count();
+        $m = MetricasPanel::obtener();
+        $semana = collect($m['semana']);
+        $entregados = $semana->sum('entregados');
+        $fallidos = $semana->sum('no_entregados');
+        $cerrados = $entregados + $fallidos;
 
         return [
-            Stat::make('Pedidos del día', (string) $porEstado->sum())
-                ->description('Ver todos los pedidos')
-                ->descriptionIcon(Heroicon::ChevronRight)
+            Stat::make('Pedidos de hoy', (string) $m['hoy_total'])
+                ->description($m['hoy_total'] === 0
+                    ? 'Sin pedidos programados para hoy'
+                    : "{$m['hoy_entregados']} de {$m['hoy_total']} entregados")
+                ->descriptionIcon(Heroicon::OutlinedCalendarDays)
+                ->chart($semana->pluck('total')->all())
+                ->color('primary')
                 ->url(PedidoResource::getUrl('index')),
-            Stat::make('Pendientes de asignar', (string) ($pendientes->total ?? 0))
-                ->description('Carga pendiente: '.CapacidadVehiculo::formatearKg($cargaPendiente).' kg')
-                ->descriptionIcon(Heroicon::OutlinedClock)
-                ->color('warning')
+
+            Stat::make('Por asignar', (string) $m['pendientes'])
+                ->description(match (true) {
+                    $m['pendientes'] === 0 => 'Todo asignado',
+                    $m['atrasados'] > 0 => CapacidadVehiculo::formatearKg($m['peso_pendiente'])." kg · {$m['atrasados']} atrasados",
+                    default => CapacidadVehiculo::formatearKg($m['peso_pendiente']).' kg por asignar',
+                })
+                ->descriptionIcon($m['atrasados'] > 0 ? Heroicon::OutlinedExclamationTriangle : Heroicon::OutlinedClock)
+                ->color(match (true) {
+                    $m['atrasados'] > 0 => 'danger',
+                    $m['pendientes'] > 0 => 'warning',
+                    default => 'success',
+                })
                 ->url(PedidoResource::getUrl('index', ['tab' => 'pendiente'])),
-            Stat::make('En reparto', (string) ($porEstado[EstadoPedido::EnReparto->value] ?? 0))
-                ->description($enRuta.' '.($enRuta === 1 ? 'repartidor' : 'repartidores').' en ruta')
+
+            Stat::make('En reparto', (string) $m['en_reparto'])
+                ->description($m['en_ruta'] === 1 ? '1 repartidor en ruta' : "{$m['en_ruta']} repartidores en ruta")
                 ->descriptionIcon(Heroicon::OutlinedTruck)
                 ->color('info')
                 ->url(RepartidorResource::getUrl('index')),
-            Stat::make('Entregados', (string) ($porEstado[EstadoPedido::Entregado->value] ?? 0))
-                ->description('Con comprobante digital')
-                ->descriptionIcon(Heroicon::OutlinedCheckCircle)
+
+            Stat::make('Tasa de entrega · 7 días', $cerrados === 0 ? '—' : round($entregados / $cerrados * 100).' %')
+                ->description($cerrados === 0
+                    ? 'Aún sin entregas cerradas'
+                    : "{$entregados} entregadas · {$fallidos} fallidas")
+                ->descriptionIcon(Heroicon::OutlinedCheckBadge)
+                ->chart($semana->pluck('entregados')->all())
                 ->color('success')
                 ->url(ComprobanteResource::getUrl('index')),
         ];
