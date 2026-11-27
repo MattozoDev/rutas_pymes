@@ -39,6 +39,8 @@ class RepartidorResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static string|UnitEnum|null $navigationGroup = 'Gestión';
 
     protected static ?string $navigationLabel = 'Repartidores y flota';

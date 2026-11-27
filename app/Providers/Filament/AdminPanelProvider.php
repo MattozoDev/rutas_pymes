@@ -51,6 +51,8 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->globalSearch(false)
             ->navigationGroups(['Gestión', 'Registros', 'Configuración'])
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('60s')
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('filament.hooks.leaflet'))
             ->homeUrl(fn (): string => auth()->user()?->esRepartidor() ? MisEntregas::getUrl() : Inicio::getUrl())
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')

@@ -54,7 +54,7 @@ class IndicadoresMetas extends StatsOverviewWidget
                 ),
             ),
             Stat::make('Ahorro estimado por orden de paradas', $ahorroSistema === null ? 'Sin datos' : $this->numero($ahorroSistema).' %')
-                ->description(sprintf('%d rutas con coordenadas · línea recta, no reemplaza la medición real', $rutas->count()))
+                ->description(sprintf('%d rutas · %d calculadas por calles · orden sugerido vs. orden ingresado', $rutas->count(), $rutas->filter(fn (Ruta $ruta): bool => ($ruta->trayecto['calculo'] ?? null) === 'calles')->count()))
                 ->descriptionIcon(Heroicon::OutlinedMap)
                 ->color('info'),
             Stat::make('Mediciones registradas', (string) $resultado->mediciones)

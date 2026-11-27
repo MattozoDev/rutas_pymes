@@ -6,6 +6,7 @@ use App\Enums\EstadoEntrega;
 use App\Enums\EstadoRuta;
 use App\Models\Comprobante;
 use App\Models\Entrega;
+use App\Models\Ruta;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -30,7 +31,9 @@ final class CierreEntrega
      */
     public function cerrar(Entrega $entrega, array $datos): ?Comprobante
     {
-        $comprobante = DB::transaction(function () use ($entrega, $datos): ?Comprobante {
+        $rutaCompletada = null;
+
+        $comprobante = DB::transaction(function () use ($entrega, $datos, &$rutaCompletada): ?Comprobante {
             $this->iniciarRutaSiCorresponde($entrega);
 
             $entrega->update(Arr::only($datos, [
@@ -38,7 +41,7 @@ final class CierreEntrega
                 'evidencia_path', 'latitud_confirmacion', 'longitud_confirmacion',
             ]));
 
-            $this->completarRutaSiTermino($entrega);
+            $rutaCompletada = $this->completarRutaSiTermino($entrega);
 
             return Comprobante::query()->where('entrega_id', $entrega->id)->first();
         });
@@ -49,6 +52,12 @@ final class CierreEntrega
             } catch (Throwable $excepcion) {
                 report($excepcion);
             }
+        }
+
+        Avisos::entregaCerrada($entrega, $comprobante);
+
+        if ($rutaCompletada !== null) {
+            Avisos::rutaFinalizada($rutaCompletada);
         }
 
         return $comprobante;
@@ -64,21 +73,25 @@ final class CierreEntrega
         }
     }
 
-    private function completarRutaSiTermino(Entrega $entrega): void
+    private function completarRutaSiTermino(Entrega $entrega): ?Ruta
     {
         $ruta = $entrega->ruta()->first();
 
         if ($ruta === null || $ruta->estado !== EstadoRuta::EnCurso) {
-            return;
+            return null;
         }
 
         $quedanAbiertas = $ruta->entregas()
             ->whereIn('estado', [EstadoEntrega::Asignada, EstadoEntrega::EnCamino])
             ->exists();
 
-        if (! $quedanAbiertas) {
-            $ruta->estado = EstadoRuta::Completada;
-            $ruta->save();
+        if ($quedanAbiertas) {
+            return null;
         }
+
+        $ruta->estado = EstadoRuta::Completada;
+        $ruta->save();
+
+        return $ruta;
     }
 }

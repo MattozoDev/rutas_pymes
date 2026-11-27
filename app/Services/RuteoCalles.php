@@ -24,7 +24,7 @@ final class RuteoCalles
             $puntos,
         ));
 
-        return Cache::store('file')->remember(
+        return Cache::store(config('services.osrm.cache_store'))->remember(
             'ruteo.'.md5($servicio.$coordenadas),
             now()->addDay(),
             function () use ($servicio, $coordenadas): ?array {

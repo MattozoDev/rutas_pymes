@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Pedidos\Pages;
 
 use App\Filament\Resources\Pedidos\PedidoResource;
 use App\Filament\Resources\Rutas\RutaResource;
+use App\Filament\Schemas\UbicacionEnMapa;
 use App\Models\Cliente;
 use App\Models\Pedido;
 use Filament\Actions\Action;
@@ -40,7 +41,7 @@ class CreatePedido extends CreateRecord
      */
     protected function handleRecordCreation(array $data): Model
     {
-        $pedido = new Pedido($data);
+        $pedido = new Pedido(UbicacionEnMapa::completarCoordenadas($data, 'direccion_entrega', 'comuna'));
         $pedido->creado_por = auth()->id();
         $pedido->save();
 

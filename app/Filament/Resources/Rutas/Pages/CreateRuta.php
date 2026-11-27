@@ -4,8 +4,9 @@ namespace App\Filament\Resources\Rutas\Pages;
 
 use App\Filament\Resources\Rutas\RutaResource;
 use App\Models\Pedido;
-use App\Services\AsignadorRuta;
 use App\Models\Vehiculo;
+use App\Services\AsignadorRuta;
+use App\Services\Avisos;
 use App\Services\CapacidadExcedidaException;
 use App\Services\MedicionAutomatica;
 use Filament\Notifications\Notification;
@@ -68,6 +69,8 @@ class CreateRuta extends CreateRecord
             (now()->getTimestamp() - $this->inicioPlanificacion) / 60,
             Vehiculo::query()->whereKey($ruta->vehiculo_id)->value('tipo'),
         );
+
+        Avisos::rutaAsignada($ruta);
 
         return $ruta;
     }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Pedidos\Schemas;
 
 use App\Enums\TamanoCarga;
+use App\Filament\Schemas\UbicacionEnMapa;
 use App\Models\Cliente;
 use App\Models\Pedido;
 use App\Services\CapacidadVehiculo;
@@ -65,8 +66,10 @@ class PedidoForm
                         ->schema([
                             TextInput::make('direccion_entrega')
                                 ->label('Dirección de entrega')
+                                ->placeholder('Ej: Av. Matta 1240')
                                 ->required()
                                 ->maxLength(255)
+                                ->suffixAction(UbicacionEnMapa::accionUbicar('direccion_entrega', 'comuna'))
                                 ->columnSpanFull(),
                             TextInput::make('comuna')
                                 ->required()
@@ -87,13 +90,7 @@ class PedidoForm
                                     TimePicker::make('franja_inicio')->label('Desde')->seconds(false),
                                     TimePicker::make('franja_fin')->label('Hasta')->seconds(false)->after('franja_inicio'),
                                 ]),
-                            Fieldset::make('Ubicación (opcional, mejora la ruta sugerida)')
-                                ->columns(2)
-                                ->columnSpanFull()
-                                ->schema([
-                                    TextInput::make('latitud')->numeric()->minValue(-90)->maxValue(90)->placeholder('-33.4489'),
-                                    TextInput::make('longitud')->numeric()->minValue(-180)->maxValue(180)->placeholder('-70.6693'),
-                                ]),
+                            UbicacionEnMapa::fieldset(),
                         ]),
 
                     Section::make('Carga')

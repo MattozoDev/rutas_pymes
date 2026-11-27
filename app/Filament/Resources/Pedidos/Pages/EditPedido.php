@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Pedidos\Pages;
 
 use App\Filament\Resources\Pedidos\PedidoResource;
+use App\Filament\Schemas\UbicacionEnMapa;
 use App\Models\Pedido;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
@@ -28,6 +29,15 @@ class EditPedido extends EditRecord
 
             $this->redirect(PedidoResource::getUrl('view', ['record' => $pedido]));
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return UbicacionEnMapa::completarCoordenadas($data, 'direccion_entrega', 'comuna');
     }
 
     protected function getHeaderActions(): array

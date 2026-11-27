@@ -6,6 +6,7 @@ use App\Enums\EscenarioMedicion;
 use App\Filament\Concerns\SoloAdministradores;
 use App\Filament\Resources\Mediciones\Pages\ManageMediciones;
 use App\Models\MedicionPlanificacion;
+use App\Services\CapacidadVehiculo;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
@@ -30,6 +31,8 @@ class MedicionPlanificacionResource extends Resource
     protected static ?string $model = MedicionPlanificacion::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
+
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static string|UnitEnum|null $navigationGroup = 'Registros';
 

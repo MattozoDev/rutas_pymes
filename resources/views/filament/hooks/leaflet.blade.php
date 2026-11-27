@@ -249,4 +249,75 @@
             this.mapa = null;
         },
     });
+
+    window.mapaSelector = (latitud, longitud) => ({
+        latitud,
+        longitud,
+        mapa: null,
+        marcador: null,
+
+        init() {
+            if (typeof L === 'undefined') {
+                return;
+            }
+
+            const oscuro = document.documentElement.classList.contains('dark');
+            const mapa = L.map(this.$refs.lienzo, { scrollWheelZoom: false }).setView([-33.4489, -70.6693], 11);
+
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                className: oscuro ? 'mapa-teselas-oscuras' : '',
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            }).addTo(mapa);
+
+            mapa.on('click', (evento) => this.fijar(evento.latlng.lat, evento.latlng.lng));
+
+            this.mapa = mapa;
+            this.mostrar(true);
+
+            this.$watch('latitud', () => this.mostrar(true));
+            this.$watch('longitud', () => this.mostrar(true));
+
+            setTimeout(() => mapa.invalidateSize(), 250);
+        },
+
+        coordenadas() {
+            const lat = parseFloat(this.latitud);
+            const lng = parseFloat(this.longitud);
+
+            return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null;
+        },
+
+        mostrar(centrar) {
+            const punto = this.coordenadas();
+
+            if (! punto || ! this.mapa) {
+                return;
+            }
+
+            if (! this.marcador) {
+                this.marcador = L.marker(punto, { draggable: true, autoPan: true }).addTo(this.mapa);
+                this.marcador.on('dragend', () => {
+                    const posicion = this.marcador.getLatLng();
+                    this.fijar(posicion.lat, posicion.lng);
+                });
+            } else {
+                this.marcador.setLatLng(punto);
+            }
+
+            if (centrar) {
+                this.mapa.setView(punto, Math.max(this.mapa.getZoom(), 16));
+            }
+        },
+
+        fijar(lat, lng) {
+            this.latitud = Number(lat.toFixed(6));
+            this.longitud = Number(lng.toFixed(6));
+        },
+
+        destroy() {
+            this.mapa?.remove();
+            this.mapa = null;
+        },
+    });
 </script>

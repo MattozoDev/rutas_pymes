@@ -3,10 +3,10 @@
 namespace App\Filament\Resources\Clientes\Schemas;
 
 use App\Filament\Resources\Pedidos\Schemas\PedidoForm;
+use App\Filament\Schemas\UbicacionEnMapa;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -23,16 +23,10 @@ class ClienteForm
                         TextInput::make('nombre')->required()->maxLength(255),
                         TextInput::make('telefono')->label('Teléfono')->tel()->placeholder('+56 9 1234 5678')->maxLength(30),
                         TextInput::make('email')->label('Correo')->email()->helperText('Se usa para enviar el comprobante de entrega.')->maxLength(255),
-                        TextInput::make('direccion')->label('Dirección')->maxLength(255),
+                        TextInput::make('direccion')->label('Dirección')->placeholder('Ej: San Diego 980')->maxLength(255)->suffixAction(UbicacionEnMapa::accionUbicar('direccion', 'comuna')),
                         TextInput::make('comuna')->datalist(PedidoForm::COMUNAS_FRECUENTES)->maxLength(100),
                         Toggle::make('activo')->default(true)->inline(false),
-                        Fieldset::make('Ubicación (opcional)')
-                            ->columns(2)
-                            ->columnSpanFull()
-                            ->schema([
-                                TextInput::make('latitud')->numeric()->minValue(-90)->maxValue(90),
-                                TextInput::make('longitud')->numeric()->minValue(-180)->maxValue(180),
-                            ]),
+                        UbicacionEnMapa::fieldset(),
                         Textarea::make('notas')->maxLength(2000)->columnSpanFull(),
                     ]),
             ]);

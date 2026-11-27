@@ -5,8 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/admin');
 
-Route::get('/repartidor', fn () => redirect()->route('filament.admin.auth.login', ['modo' => 'repartidor']))
-    ->name('repartidor.ingreso');
+Route::redirect('/repartidor', '/admin/login')->name('repartidor.ingreso');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/comprobantes/{comprobante}/documento', [ComprobanteController::class, 'show'])

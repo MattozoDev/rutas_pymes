@@ -31,6 +31,7 @@ return [
     'osrm' => [
         'url' => env('OSRM_URL', 'https://routing.openstreetmap.de'),
         'timeout' => (int) env('OSRM_TIMEOUT', 8),
+        'cache_store' => env('OSRM_CACHE_STORE', 'file'),
     ],
 
     'nominatim' => [

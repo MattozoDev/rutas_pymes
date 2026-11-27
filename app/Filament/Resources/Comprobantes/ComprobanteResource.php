@@ -28,6 +28,8 @@ class ComprobanteResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static string|UnitEnum|null $navigationGroup = 'Registros';
 
     protected static ?int $navigationSort = 1;

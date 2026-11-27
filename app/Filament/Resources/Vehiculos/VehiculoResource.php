@@ -35,6 +35,8 @@ class VehiculoResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static string|UnitEnum|null $navigationGroup = 'Gestión';
 
     protected static ?int $navigationSort = 4;

@@ -64,12 +64,12 @@ class RutaInfolist
                                 $record->entregas->map(fn (Entrega $entrega) => $entrega->pedido?->peso_kg),
                             )->mensaje()),
                         TextEntry::make('distancia_km')
-                            ->label('Distancia estimada')
-                            ->suffix(' km')
+                            ->label('Distancia')
+                            ->suffix(fn (Ruta $record): string => ($record->trayecto['calculo'] ?? null) === 'calles' ? ' km por calles' : ' km en línea recta')
                             ->placeholder('Faltan coordenadas'),
                         TextEntry::make('duracion_min')
                             ->label('Tiempo estimado')
-                            ->suffix(' min')
+                            ->suffix(' min (incluye 5 min por parada)')
                             ->placeholder('—'),
                         TextEntry::make('ahorro')
                             ->label('Ahorro vs. orden ingresado')
